@@ -13,6 +13,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.automirrored.rounded.VolumeOff
+import androidx.compose.material.icons.rounded.CenterFocusWeak
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.Icon
@@ -28,25 +30,37 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.jarvis.assistant.ui.theme.JarvisBackground
-import com.jarvis.assistant.ui.theme.JarvisCyan
 import com.jarvis.assistant.ui.theme.JarvisSurface
 import com.jarvis.assistant.ui.theme.JarvisSurfaceBorder
 import com.jarvis.assistant.ui.theme.JarvisSurfaceVariant
 import com.jarvis.assistant.ui.theme.JarvisTextMuted
 import com.jarvis.assistant.ui.theme.JarvisTextPrimary
+import com.jarvis.assistant.ui.theme.JarvisWarningAmber
 
 @Composable
 fun CommandInputBar(
     inputText: String,
     isListening: Boolean,
+    isSpeaking: Boolean = false,
+    partialTranscript: String = "",
     onInputChange: (String) -> Unit,
     onSendClick: () -> Unit,
     onMicClick: () -> Unit,
+    onStopSpeakingClick: () -> Unit = {},
+    onVisionClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val canSend = inputText.isNotBlank()
+    val accent = MaterialTheme.colorScheme.primary
+
+    val placeholderText = when {
+        isListening && partialTranscript.isNotBlank() -> partialTranscript
+        isListening -> "Listening..."
+        else -> "Enter command or message..."
+    }
 
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -62,8 +76,8 @@ fun CommandInputBar(
             IconButton(
                 onClick = onMicClick,
                 colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = if (isListening) JarvisCyan else JarvisSurfaceVariant,
-                    contentColor = if (isListening) JarvisBackground else JarvisCyan
+                    containerColor = if (isListening) accent else JarvisSurfaceVariant,
+                    contentColor = if (isListening) JarvisBackground else accent
                 ),
                 modifier = Modifier.size(44.dp)
             ) {
@@ -71,6 +85,40 @@ fun CommandInputBar(
                     imageVector = if (isListening) Icons.Rounded.Stop else Icons.Rounded.Mic,
                     contentDescription = if (isListening) "Stop listening" else "Voice input"
                 )
+            }
+
+            if (isSpeaking) {
+                Spacer(modifier = Modifier.width(6.dp))
+                IconButton(
+                    onClick = onStopSpeakingClick,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = JarvisWarningAmber.copy(alpha = 0.2f),
+                        contentColor = JarvisWarningAmber
+                    ),
+                    modifier = Modifier.size(44.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.VolumeOff,
+                        contentDescription = "Stop speaking"
+                    )
+                }
+            }
+
+            if (onVisionClick != null) {
+                Spacer(modifier = Modifier.width(6.dp))
+                IconButton(
+                    onClick = onVisionClick,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = JarvisSurfaceVariant,
+                        contentColor = accent
+                    ),
+                    modifier = Modifier.size(44.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.CenterFocusWeak,
+                        contentDescription = "Open JARVIS Vision Scanner"
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -81,9 +129,11 @@ fun CommandInputBar(
                 modifier = Modifier.weight(1f),
                 placeholder = {
                     Text(
-                        text = if (isListening) "Listening..." else "Enter command or message...",
+                        text = placeholderText,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (isListening) JarvisCyan else JarvisTextMuted
+                        color = if (isListening) accent else JarvisTextMuted,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                 },
                 singleLine = false,
@@ -98,11 +148,11 @@ fun CommandInputBar(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = JarvisBackground,
                     unfocusedContainerColor = JarvisBackground,
-                    focusedBorderColor = JarvisCyan,
+                    focusedBorderColor = accent,
                     unfocusedBorderColor = JarvisSurfaceBorder,
                     focusedTextColor = JarvisTextPrimary,
                     unfocusedTextColor = JarvisTextPrimary,
-                    cursorColor = JarvisCyan
+                    cursorColor = accent
                 )
             )
 
@@ -110,7 +160,7 @@ fun CommandInputBar(
 
             Surface(
                 shape = CircleShape,
-                color = if (canSend) JarvisCyan else JarvisSurfaceVariant,
+                color = if (canSend) accent else JarvisSurfaceVariant,
                 modifier = Modifier.size(44.dp)
             ) {
                 IconButton(

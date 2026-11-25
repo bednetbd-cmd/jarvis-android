@@ -2,6 +2,7 @@ package com.jarvis.assistant.core.voice
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -15,8 +16,18 @@ import java.util.Locale
 
 interface SpeechRecognizerPort {
     val isAvailable: Boolean
+    val isOnDeviceAvailable: Boolean
     val isListening: StateFlow<Boolean>
-    fun startListening(onResult: (String) -> Unit, onError: (String) -> Unit)
+    val rmsLevel: StateFlow<Float>
+    val partialTranscript: StateFlow<String>
+
+    fun startListening(
+        languageTag: String = Locale.getDefault().toLanguageTag(),
+        preferOffline: Boolean = false,
+        onResult: (String) -> Unit,
+        onError: (String) -> Unit
+    )
+
     fun stopListening()
     fun release()
 }
@@ -32,13 +43,28 @@ class AndroidSpeechRecognizer(
     private val _isListening = MutableStateFlow(false)
     override val isListening: StateFlow<Boolean> = _isListening.asStateFlow()
 
+    private val _rmsLevel = MutableStateFlow(0f)
+    override val rmsLevel: StateFlow<Float> = _rmsLevel.asStateFlow()
+
+    private val _partialTranscript = MutableStateFlow("")
+    override val partialTranscript: StateFlow<String> = _partialTranscript.asStateFlow()
+
     override val isAvailable: Boolean
         get() = SpeechRecognizer.isRecognitionAvailable(appContext)
 
-    override fun startListening(onResult: (String) -> Unit, onError: (String) -> Unit) {
+    override val isOnDeviceAvailable: Boolean
+        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            SpeechRecognizer.isOnDeviceRecognitionAvailable(appContext)
+
+    override fun startListening(
+        languageTag: String,
+        preferOffline: Boolean,
+        onResult: (String) -> Unit,
+        onError: (String) -> Unit
+    ) {
         mainHandler.post {
             if (!SpeechRecognizer.isRecognitionAvailable(appContext)) {
-                _isListening.value = false
+                resetListeningState()
                 onError("Speech recognition service is not available on this device.")
                 return@post
             }
@@ -55,19 +81,26 @@ class AndroidSpeechRecognizer(
 
                 recognizer.setRecognitionListener(object : RecognitionListener {
                     override fun onReadyForSpeech(params: Bundle?) {
+                        _partialTranscript.value = ""
                         _isListening.value = true
                     }
 
                     override fun onBeginningOfSpeech() = Unit
-                    override fun onRmsChanged(rmsdB: Float) = Unit
+
+                    override fun onRmsChanged(rmsdB: Float) {
+                        val normalized = ((rmsdB + 2f) / 12f).coerceIn(0f, 1f)
+                        _rmsLevel.value = normalized
+                    }
+
                     override fun onBufferReceived(buffer: ByteArray?) = Unit
 
                     override fun onEndOfSpeech() {
                         _isListening.value = false
+                        _rmsLevel.value = 0f
                     }
 
                     override fun onError(error: Int) {
-                        _isListening.value = false
+                        resetListeningState()
                         val message = when (error) {
                             SpeechRecognizer.ERROR_AUDIO -> "Audio recording error."
                             SpeechRecognizer.ERROR_CLIENT -> "Voice recognition canceled."
@@ -75,13 +108,20 @@ class AndroidSpeechRecognizer(
                                 "Microphone permission is required for voice input."
                             SpeechRecognizer.ERROR_NETWORK,
                             SpeechRecognizer.ERROR_NETWORK_TIMEOUT ->
-                                "Network unavailable for speech recognition."
+                                if (preferOffline) {
+                                    "Offline speech pack for $languageTag is unavailable without network. Download offline language data in Android settings."
+                                } else {
+                                    "Network unavailable for speech recognition. Try enabling Prefer Offline Voice in Settings if an offline language pack is installed."
+                                }
                             SpeechRecognizer.ERROR_NO_MATCH ->
                                 "Didn't catch that. Please try speaking again."
                             SpeechRecognizer.ERROR_RECOGNIZER_BUSY ->
                                 "Speech recognizer is busy. Try again in a moment."
                             SpeechRecognizer.ERROR_SPEECH_TIMEOUT ->
                                 "No speech detected."
+                            ERROR_LANGUAGE_NOT_SUPPORTED,
+                            ERROR_LANGUAGE_UNAVAILABLE ->
+                                "Speech recognition pack for $languageTag is missing or unsupported on this device."
                             else -> "Voice recognition failed (code $error)."
                         }
                         if (error != SpeechRecognizer.ERROR_CLIENT) {
@@ -90,7 +130,7 @@ class AndroidSpeechRecognizer(
                     }
 
                     override fun onResults(results: Bundle?) {
-                        _isListening.value = false
+                        resetListeningState()
                         val matches = results
                             ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                         val transcript = matches?.firstOrNull()?.trim().orEmpty()
@@ -101,7 +141,17 @@ class AndroidSpeechRecognizer(
                         }
                     }
 
-                    override fun onPartialResults(partialResults: Bundle?) = Unit
+                    override fun onPartialResults(partialResults: Bundle?) {
+                        val partial = partialResults
+                            ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                            ?.firstOrNull()
+                            ?.trim()
+                            .orEmpty()
+                        if (partial.isNotEmpty()) {
+                            _partialTranscript.value = partial
+                        }
+                    }
+
                     override fun onEvent(eventType: Int, params: Bundle?) = Unit
                 })
 
@@ -110,15 +160,20 @@ class AndroidSpeechRecognizer(
                         RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                         RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
                     )
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
-                    putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, languageTag)
+                    putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                     putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                    if (preferOffline) {
+                        putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+                    }
                 }
 
+                _partialTranscript.value = ""
                 _isListening.value = true
                 recognizer.startListening(intent)
             }.onFailure { throwable ->
-                _isListening.value = false
+                resetListeningState()
                 onError(throwable.message ?: "Unable to start speech recognition.")
             }
         }
@@ -130,16 +185,28 @@ class AndroidSpeechRecognizer(
 
     override fun release() {
         mainHandler.post {
-            _isListening.value = false
+            resetListeningState()
             speechRecognizer?.destroy()
             speechRecognizer = null
         }
     }
 
     private fun stopInternal() {
-        _isListening.value = false
+        resetListeningState()
         runCatching {
             speechRecognizer?.stopListening()
         }
+    }
+
+    private fun resetListeningState() {
+        _isListening.value = false
+        _rmsLevel.value = 0f
+        _partialTranscript.value = ""
+    }
+
+    private companion object {
+        // Android API 31+ SpeechRecognizer constants defined explicitly for minSdk 26 compatibility
+        const val ERROR_LANGUAGE_NOT_SUPPORTED = 12
+        const val ERROR_LANGUAGE_UNAVAILABLE = 13
     }
 }

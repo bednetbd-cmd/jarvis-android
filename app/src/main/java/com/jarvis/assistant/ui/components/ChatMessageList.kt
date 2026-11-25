@@ -25,8 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.jarvis.assistant.domain.model.ChatMessage
 import com.jarvis.assistant.domain.model.MessageSender
-import com.jarvis.assistant.ui.theme.JarvisBlue
-import com.jarvis.assistant.ui.theme.JarvisCyan
 import com.jarvis.assistant.ui.theme.JarvisSurfaceBorder
 import com.jarvis.assistant.ui.theme.JarvisSystemBubble
 import com.jarvis.assistant.ui.theme.JarvisTextMuted
@@ -68,6 +66,8 @@ fun ChatMessageList(
 @Composable
 private fun ChatMessageBubble(message: ChatMessage) {
     val isUser = message.sender == MessageSender.USER
+    val accent = MaterialTheme.colorScheme.primary
+    val secondary = MaterialTheme.colorScheme.secondary
     val formattedTime = remember(message.timestampMillis) {
         SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(message.timestampMillis))
     }
@@ -79,8 +79,8 @@ private fun ChatMessageBubble(message: ChatMessage) {
     }
 
     val labelColor = when (message.sender) {
-        MessageSender.USER -> JarvisCyan
-        MessageSender.ASSISTANT -> JarvisBlue
+        MessageSender.USER -> accent
+        MessageSender.ASSISTANT -> secondary
         MessageSender.SYSTEM_NOTICE -> JarvisWarningAmber
     }
 
@@ -100,7 +100,7 @@ private fun ChatMessageBubble(message: ChatMessage) {
             border = BorderStroke(
                 width = 1.dp,
                 color = if (isUser) {
-                    JarvisCyan.copy(alpha = 0.55f)
+                    accent.copy(alpha = 0.55f)
                 } else {
                     JarvisSurfaceBorder
                 }

@@ -26,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.jarvis.assistant.ui.theme.JarvisBackground
-import com.jarvis.assistant.ui.theme.JarvisCyan
 import com.jarvis.assistant.ui.theme.JarvisSurfaceBorder
 import com.jarvis.assistant.ui.theme.JarvisTextMuted
 import com.jarvis.assistant.ui.theme.JarvisTextPrimary
@@ -39,6 +38,8 @@ fun JarvisTopBar(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val accent = MaterialTheme.colorScheme.primary
+
     Column(modifier = modifier) {
         TopAppBar(
             title = {
@@ -47,7 +48,7 @@ fun JarvisTopBar(
                         modifier = Modifier
                             .size(9.dp)
                             .clip(CircleShape)
-                            .background(JarvisCyan)
+                            .background(accent)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
@@ -70,21 +71,21 @@ fun JarvisTopBar(
                         } else {
                             "Enable voice replies"
                         },
-                        tint = if (isTtsEnabled) JarvisCyan else JarvisTextMuted
+                        tint = if (isTtsEnabled) accent else JarvisTextMuted
                     )
                 }
                 IconButton(onClick = onOpenSettings) {
                     Icon(
                         imageVector = Icons.Rounded.Settings,
                         contentDescription = "Settings",
-                        tint = JarvisCyan
+                        tint = accent
                     )
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = JarvisBackground,
                 titleContentColor = JarvisTextPrimary,
-                actionIconContentColor = JarvisCyan
+                actionIconContentColor = accent
             )
         )
         HorizontalDivider(

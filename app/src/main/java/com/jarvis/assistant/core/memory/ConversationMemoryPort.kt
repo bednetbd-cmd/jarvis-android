@@ -1,6 +1,7 @@
 package com.jarvis.assistant.core.memory
 
 import android.content.Context
+import com.jarvis.assistant.data.security.SecureVaultPort
 import com.jarvis.assistant.domain.model.ChatMessage
 import com.jarvis.assistant.domain.model.MessageSender
 import kotlinx.coroutines.Dispatchers
@@ -19,6 +20,7 @@ interface ConversationMemoryPort {
     val messages: Flow<List<ChatMessage>>
     suspend fun append(message: ChatMessage)
     suspend fun clear()
+    suspend fun setEncryptionEnabled(enabled: Boolean) {}
 }
 
 class InMemoryConversationStore(
@@ -38,7 +40,9 @@ class InMemoryConversationStore(
 
 class FileConversationStore(
     context: Context,
-    private val defaultMessages: List<ChatMessage>
+    private val defaultMessages: List<ChatMessage>,
+    private val secureVault: SecureVaultPort? = null,
+    @Volatile private var encryptAtRest: Boolean = true
 ) : ConversationMemoryPort {
 
     private val historyFile = File(context.applicationContext.filesDir, "jarvis_history.json")
@@ -61,12 +65,27 @@ class FileConversationStore(
         }
     }
 
+    override suspend fun setEncryptionEnabled(enabled: Boolean) {
+        writeMutex.withLock {
+            if (encryptAtRest != enabled) {
+                encryptAtRest = enabled
+                persistMessages(_messages.value)
+            }
+        }
+    }
+
     private fun loadInitialMessages(): List<ChatMessage> {
         if (!historyFile.exists()) return defaultMessages
         return runCatching {
-            val raw = historyFile.readText()
-            if (raw.isBlank()) return defaultMessages
-            val array = JSONArray(raw)
+            val rawDisk = historyFile.readText()
+            if (rawDisk.isBlank()) return defaultMessages
+            val jsonText = if (rawDisk.startsWith(ENCRYPTED_PREFIX)) {
+                val payload = rawDisk.removePrefix(ENCRYPTED_PREFIX)
+                secureVault?.decryptPayload(payload) ?: return defaultMessages
+            } else {
+                rawDisk
+            }
+            val array = JSONArray(jsonText)
             buildList {
                 for (i in 0 until array.length()) {
                     val item = array.getJSONObject(i)
@@ -100,12 +119,21 @@ class FileConversationStore(
                         }
                     )
                 }
-                historyFile.writeText(array.toString())
+                val jsonString = array.toString()
+                val encrypted = if (encryptAtRest) secureVault?.encryptPayload(jsonString) else null
+                val payload = if (encrypted != null) "$ENCRYPTED_PREFIX$encrypted" else jsonString
+                val tempFile = File(historyFile.parentFile, "${historyFile.name}.tmp")
+                tempFile.writeText(payload)
+                if (!tempFile.renameTo(historyFile)) {
+                    historyFile.writeText(payload)
+                    tempFile.delete()
+                }
             }
         }
     }
 
     companion object {
         private const val MAX_STORED_MESSAGES = 200
+        private const val ENCRYPTED_PREFIX = "ENC1:"
     }
 }

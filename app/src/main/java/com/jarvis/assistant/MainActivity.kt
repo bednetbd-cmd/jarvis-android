@@ -2,14 +2,17 @@ package com.jarvis.assistant
 
 import android.graphics.Color
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.getValue
+import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jarvis.assistant.domain.model.JarvisPreferences
 import com.jarvis.assistant.ui.navigation.JarvisNavGraph
 import com.jarvis.assistant.ui.theme.JarvisTheme
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -21,7 +24,10 @@ class MainActivity : ComponentActivity() {
         val container = (application as JarvisApplication).container
 
         setContent {
-            JarvisTheme {
+            val preferences by container.preferencesRepository.preferences
+                .collectAsStateWithLifecycle(initialValue = JarvisPreferences())
+
+            JarvisTheme(accentTheme = preferences.accentTheme) {
                 JarvisNavGraph(container = container)
             }
         }
