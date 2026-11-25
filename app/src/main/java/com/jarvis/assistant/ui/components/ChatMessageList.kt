@@ -25,12 +25,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.jarvis.assistant.domain.model.ChatMessage
 import com.jarvis.assistant.domain.model.MessageSender
+import com.jarvis.assistant.ui.theme.JarvisBlue
 import com.jarvis.assistant.ui.theme.JarvisCyan
 import com.jarvis.assistant.ui.theme.JarvisSurfaceBorder
 import com.jarvis.assistant.ui.theme.JarvisSystemBubble
 import com.jarvis.assistant.ui.theme.JarvisTextMuted
 import com.jarvis.assistant.ui.theme.JarvisTextPrimary
 import com.jarvis.assistant.ui.theme.JarvisUserBubble
+import com.jarvis.assistant.ui.theme.JarvisWarningAmber
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -70,6 +72,18 @@ private fun ChatMessageBubble(message: ChatMessage) {
         SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(message.timestampMillis))
     }
 
+    val senderLabel = when (message.sender) {
+        MessageSender.USER -> "YOU"
+        MessageSender.ASSISTANT -> "JARVIS"
+        MessageSender.SYSTEM_NOTICE -> "SYSTEM"
+    }
+
+    val labelColor = when (message.sender) {
+        MessageSender.USER -> JarvisCyan
+        MessageSender.ASSISTANT -> JarvisBlue
+        MessageSender.SYSTEM_NOTICE -> JarvisWarningAmber
+    }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
@@ -101,9 +115,9 @@ private fun ChatMessageBubble(message: ChatMessage) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = if (isUser) "YOU" else "SYSTEM · PLACEHOLDER",
+                        text = senderLabel,
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (isUser) JarvisCyan else JarvisTextMuted
+                        color = labelColor
                     )
                     Text(
                         text = formattedTime,

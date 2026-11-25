@@ -2,12 +2,15 @@ package com.jarvis.assistant.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.VolumeOff
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -25,15 +28,18 @@ import androidx.compose.ui.unit.dp
 import com.jarvis.assistant.ui.theme.JarvisBackground
 import com.jarvis.assistant.ui.theme.JarvisCyan
 import com.jarvis.assistant.ui.theme.JarvisSurfaceBorder
+import com.jarvis.assistant.ui.theme.JarvisTextMuted
 import com.jarvis.assistant.ui.theme.JarvisTextPrimary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JarvisTopBar(
+    isTtsEnabled: Boolean,
+    onToggleTts: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    ColumnWrapper(modifier = modifier) {
+    Column(modifier = modifier) {
         TopAppBar(
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -52,6 +58,21 @@ fun JarvisTopBar(
                 }
             },
             actions = {
+                IconButton(onClick = onToggleTts) {
+                    Icon(
+                        imageVector = if (isTtsEnabled) {
+                            Icons.AutoMirrored.Rounded.VolumeUp
+                        } else {
+                            Icons.AutoMirrored.Rounded.VolumeOff
+                        },
+                        contentDescription = if (isTtsEnabled) {
+                            "Mute voice replies"
+                        } else {
+                            "Enable voice replies"
+                        },
+                        tint = if (isTtsEnabled) JarvisCyan else JarvisTextMuted
+                    )
+                }
                 IconButton(onClick = onOpenSettings) {
                     Icon(
                         imageVector = Icons.Rounded.Settings,
@@ -70,15 +91,5 @@ fun JarvisTopBar(
             thickness = 1.dp,
             color = JarvisSurfaceBorder.copy(alpha = 0.65f)
         )
-    }
-}
-
-@Composable
-private fun ColumnWrapper(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
-) {
-    androidx.compose.foundation.layout.Column(modifier = modifier) {
-        content()
     }
 }

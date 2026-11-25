@@ -14,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -39,6 +40,7 @@ import com.jarvis.assistant.ui.theme.JarvisTextPrimary
 @Composable
 fun CommandInputBar(
     inputText: String,
+    isListening: Boolean,
     onInputChange: (String) -> Unit,
     onSendClick: () -> Unit,
     onMicClick: () -> Unit,
@@ -60,14 +62,14 @@ fun CommandInputBar(
             IconButton(
                 onClick = onMicClick,
                 colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = JarvisSurfaceVariant,
-                    contentColor = JarvisCyan
+                    containerColor = if (isListening) JarvisCyan else JarvisSurfaceVariant,
+                    contentColor = if (isListening) JarvisBackground else JarvisCyan
                 ),
                 modifier = Modifier.size(44.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.Mic,
-                    contentDescription = "Voice input (future feature)"
+                    imageVector = if (isListening) Icons.Rounded.Stop else Icons.Rounded.Mic,
+                    contentDescription = if (isListening) "Stop listening" else "Voice input"
                 )
             }
 
@@ -79,9 +81,9 @@ fun CommandInputBar(
                 modifier = Modifier.weight(1f),
                 placeholder = {
                     Text(
-                        text = "Enter command or message...",
+                        text = if (isListening) "Listening..." else "Enter command or message...",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = JarvisTextMuted
+                        color = if (isListening) JarvisCyan else JarvisTextMuted
                     )
                 },
                 singleLine = false,

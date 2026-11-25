@@ -1,5 +1,9 @@
 package com.jarvis.assistant.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,7 +23,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jarvis.assistant.ui.components.ArcReactorIndicator
 import com.jarvis.assistant.ui.components.ChatMessageList
@@ -34,8 +40,19 @@ fun MainScreen(
     onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    val audioPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            viewModel.onMicrophoneClicked()
+        } else {
+            viewModel.showNotice("Microphone permission is required for voice commands.")
+        }
+    }
 
     LaunchedEffect(viewModel) {
         viewModel.noticeEvents.collect { message ->
@@ -51,7 +68,11 @@ fun MainScreen(
         containerColor = JarvisBackground,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            JarvisTopBar(onOpenSettings = onNavigateToSettings)
+            JarvisTopBar(
+                isTtsEnabled = uiState.isTtsEnabled,
+                onToggleTts = viewModel::toggleTts,
+                onOpenSettings = onNavigateToSettings
+            )
         },
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
@@ -87,9 +108,20 @@ fun MainScreen(
 
             CommandInputBar(
                 inputText = uiState.inputText,
+                isListening = uiState.isListening,
                 onInputChange = viewModel::onInputChanged,
-                onSendClick = viewModel::sendMessage,
-                onMicClick = viewModel::onMicrophoneClicked
+                onSendClick = { viewModel.sendMessage() },
+                onMicClick = {
+                    val hasPermission = ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.RECORD_AUDIO
+                    ) == PackageManager.PERMISSION_GRANTED
+                    if (hasPermission) {
+                        viewModel.onMicrophoneClicked()
+                    } else {
+                        audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    }
+                }
             )
         }
     }

@@ -39,6 +39,7 @@ fun JarvisNavGraph(
         }
         composable(route = JarvisRoute.SETTINGS) {
             SettingsScreen(
+                viewModel = mainViewModel,
                 onNavigateBack = {
                     navController.popBackStack()
                 }

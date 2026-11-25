@@ -4,6 +4,7 @@ import java.util.UUID
 
 enum class MessageSender {
     USER,
+    ASSISTANT,
     SYSTEM_NOTICE
 }
 

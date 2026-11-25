@@ -7,6 +7,9 @@ data class MainUiState(
     val visualState: AssistantVisualState = AssistantVisualState.STANDBY,
     val messages: List<ChatMessage> = emptyList(),
     val inputText: String = "",
-    val isAiConnected: Boolean = false,
-    val isVoiceAvailable: Boolean = false
+    val isListening: Boolean = false,
+    val isTtsEnabled: Boolean = true,
+    val isAiConnected: Boolean = true,
+    val isVoiceAvailable: Boolean = false,
+    val aiEngineLabel: String = "On-Device Assistant"
 )
