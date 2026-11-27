@@ -199,6 +199,7 @@ class Milestone10AuditTest {
         }
 
         viewModel.onInputChanged("Draft message")
+        advanceUntilIdle()
         assertEquals("Draft message", viewModel.uiState.value.inputText)
 
         viewModel.sendMessage("Note: Final Release Audit Passed")
