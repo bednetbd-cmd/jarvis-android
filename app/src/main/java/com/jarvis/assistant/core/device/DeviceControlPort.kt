@@ -16,6 +16,7 @@ import android.provider.Settings
 import android.view.KeyEvent
 import androidx.core.content.ContextCompat
 import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -209,7 +210,7 @@ class AndroidDeviceController(
             val totalBytes = stat.blockCountLong * stat.blockSizeLong
             val availableBytes = stat.availableBlocksLong * stat.blockSizeLong
             val usedBytes = (totalBytes - availableBytes).coerceAtLeast(0L)
-            val fmt = DecimalFormat("#0.00")
+            val fmt = DecimalFormat("#0.00", DecimalFormatSymbols(Locale.US))
             val gb = 1024.0 * 1024.0 * 1024.0
             "Internal Storage: ${fmt.format(availableBytes / gb)} GB free of ${fmt.format(totalBytes / gb)} GB total (${fmt.format(usedBytes / gb)} GB used)."
         }.getOrElse {

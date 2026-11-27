@@ -1,6 +1,7 @@
 package com.jarvis.assistant.core.web
 
 import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.util.Locale
 
 data class UnitConversionRequest(
@@ -109,5 +110,6 @@ object UnitConverter {
         }
     }
 
-    private fun format(number: Double): String = DecimalFormat("#,##0.####").format(number)
+    private fun format(number: Double): String =
+        DecimalFormat("#,##0.####", DecimalFormatSymbols(Locale.US)).format(number)
 }

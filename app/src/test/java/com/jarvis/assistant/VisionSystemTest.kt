@@ -216,7 +216,6 @@ private class VisionTestTelemetry(
 ) : SystemTelemetryPort {
     private val snapshot = DeviceTelemetry(
         batteryPercent = 82,
-        isOnline = isOnline,
         networkTransport = if (isOnline) NetworkTransport.WIFI else NetworkTransport.OFFLINE
     )
     override val telemetry: Flow<DeviceTelemetry> = MutableStateFlow(snapshot).asStateFlow()

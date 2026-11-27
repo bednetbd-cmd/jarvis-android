@@ -9,6 +9,8 @@ import com.jarvis.assistant.core.ai.OnDeviceJarvisAssistant
 import com.jarvis.assistant.core.ai.RemoteChatMessage
 import com.jarvis.assistant.core.automation.PhoneAutomationPort
 import com.jarvis.assistant.core.memory.InMemoryConversationStore
+import com.jarvis.assistant.core.productivity.CalendarEventSummary
+import com.jarvis.assistant.core.productivity.CalendarPort
 import com.jarvis.assistant.core.productivity.InMemoryProductivityRepository
 import com.jarvis.assistant.core.security.SensitiveActionDetector
 import com.jarvis.assistant.core.tools.AngleUnit
@@ -90,7 +92,8 @@ class Milestone10AuditTest {
     fun sensitiveActionDetectorAndBatchCapsAreBounded() {
         val eightCommands = (1..8).joinToString("; ") { "Battery status" }
         val parsed = SensitiveActionDetector.parseBatchCommands("Batch: $eightCommands")
-        assertEquals(6, parsed.size)
+        assertNotNull(parsed)
+        assertEquals(6, parsed?.size)
 
         assertNotNull(SensitiveActionDetector.inspectChatCommand("Dial +8801711111111"))
         assertNotNull(SensitiveActionDetector.inspectChatCommand("Send SMS to Mom saying Home soon"))
@@ -99,7 +102,7 @@ class Milestone10AuditTest {
     @Test
     fun suggestionEngineCapsResultsAndMaintainsUniqueness() {
         val suggestions = ContextualSuggestionEngine.generate(
-            telemetry = DeviceTelemetry(batteryPercent = 12, isCharging = false, isOnline = true),
+            telemetry = DeviceTelemetry(batteryPercent = 12, isCharging = false, networkTransport = NetworkTransport.WIFI),
             hourOfDay = 8,
             pendingTaskCount = 4,
             activeReminderCount = 2,
@@ -156,7 +159,10 @@ class Milestone10AuditTest {
         val telemetry = AuditTelemetryProvider()
         val automation = AuditAutomation()
         val contextPort = AuditContextPort()
-        val productivity = InMemoryProductivityRepository()
+        val productivity = InMemoryProductivityRepository(
+            calendarPort = AuditCalendarPort(),
+            deviceContext = contextPort
+        )
         val onDevice = OnDeviceJarvisAssistant(
             phoneAutomation = automation,
             deviceContext = contextPort,
@@ -197,7 +203,9 @@ class Milestone10AuditTest {
 
         viewModel.sendMessage("Note: Final Release Audit Passed")
         advanceUntilIdle()
-        assertTrue(viewModel.uiState.value.messages.last().content.contains("Note saved", ignoreCase = true))
+        val lastNoteReply = viewModel.uiState.value.messages.last().content
+        assertTrue(lastNoteReply.contains("Saved note", ignoreCase = true))
+        assertTrue(lastNoteReply.contains("Final Release Audit Passed"))
 
         // API key clear requires confirmation when confirmSensitiveActions = true
         vault.saveSecret("gemini_token", "dummy-key")
@@ -218,9 +226,16 @@ class Milestone10AuditTest {
 }
 
 private class AuditTelemetryProvider : SystemTelemetryPort {
-    private val state = MutableStateFlow(DeviceTelemetry(88, false, NetworkTransport.WIFI, true))
+    private val state = MutableStateFlow(DeviceTelemetry(88, false, NetworkTransport.WIFI))
     override val telemetry: Flow<DeviceTelemetry> = state.asStateFlow()
     override fun currentSnapshot(): DeviceTelemetry = state.value
+}
+
+private class AuditCalendarPort : CalendarPort {
+    override fun hasReadPermission(): Boolean = true
+    override fun readUpcomingEvents(daysAhead: Int): Result<List<CalendarEventSummary>> = Result.success(emptyList())
+    override fun openEventComposer(title: String, startMillis: Long?): Result<String> =
+        Result.success("Opening calendar composer for $title")
 }
 
 private class AuditRemoteTransport : AiRemoteTransport {

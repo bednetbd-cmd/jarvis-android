@@ -7,6 +7,7 @@ import android.net.Uri
 import android.provider.AlarmClock
 import android.provider.MediaStore
 import android.provider.Settings
+import java.util.Locale
 
 interface PhoneAutomationPort {
     suspend fun executeCommand(
@@ -62,7 +63,7 @@ class AndroidPhoneAutomation(
             putExtra(AlarmClock.EXTRA_MESSAGE, label)
             putExtra(AlarmClock.EXTRA_SKIP_UI, false)
         }
-        val formattedTime = String.format("%02d:%02d", hour, minute)
+        val formattedTime = String.format(Locale.US, "%02d:%02d", hour, minute)
         return launchIntent(intent, "Setting alarm for $formattedTime ($label).")
     }
 

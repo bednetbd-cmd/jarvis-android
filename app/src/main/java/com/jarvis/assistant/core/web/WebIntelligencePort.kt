@@ -17,6 +17,7 @@ import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.util.Locale
 import javax.xml.XMLConstants
 import javax.xml.parsers.DocumentBuilderFactory
@@ -261,7 +262,7 @@ class FreeWebIntelligenceService(
             return Result.failure(IllegalStateException("Device is offline. Connect to Wi-Fi/Cellular to fetch live exchange rates."))
         }
 
-        val fmt = DecimalFormat("#,##0.##")
+        val fmt = DecimalFormat("#,##0.##", DecimalFormatSymbols(Locale.US))
         if (from == to) {
             return Result.success("${fmt.format(amount)} $from = ${fmt.format(amount)} $to")
         }
@@ -384,5 +385,6 @@ class FreeWebIntelligenceService(
     private fun encode(text: String): String =
         URLEncoder.encode(text, "UTF-8").replace("+", "%20")
 
-    private fun formatNum(value: Double): String = DecimalFormat("#0.#").format(value)
+    private fun formatNum(value: Double): String =
+        DecimalFormat("#0.#", DecimalFormatSymbols(Locale.US)).format(value)
 }

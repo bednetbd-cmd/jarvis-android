@@ -1,6 +1,7 @@
 package com.jarvis.assistant.core.tools
 
 import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.abs
@@ -76,7 +77,7 @@ object ScientificCalculator {
         if (abs(clean - roundedInt.toDouble()) < 1e-10 && abs(clean) < 1e15) {
             return roundedInt.toString()
         }
-        return DecimalFormat("#.########").format(clean)
+        return DecimalFormat("#.########", DecimalFormatSymbols(Locale.US)).format(clean)
     }
 
     fun looksLikeExpression(text: String): Boolean {

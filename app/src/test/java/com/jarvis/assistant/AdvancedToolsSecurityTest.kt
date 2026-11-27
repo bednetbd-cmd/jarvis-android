@@ -88,7 +88,7 @@ class AdvancedToolsSecurityTest {
     @Test
     fun contextualSuggestionEngineAdaptsToBatteryNetworkAndTasks() {
         val offlineLowBattery = ContextualSuggestionEngine.generate(
-            telemetry = DeviceTelemetry(batteryPercent = 15, isCharging = false, isOnline = false),
+            telemetry = DeviceTelemetry(batteryPercent = 15, isCharging = false, networkTransport = NetworkTransport.OFFLINE),
             hourOfDay = 8,
             pendingTaskCount = 3,
             activeReminderCount = 1,
@@ -102,7 +102,7 @@ class AdvancedToolsSecurityTest {
         assertFalse(commands.contains("Latest news"))
 
         val onlineEvening = ContextualSuggestionEngine.generate(
-            telemetry = DeviceTelemetry(batteryPercent = 90, isCharging = false, isOnline = true, networkTransport = NetworkTransport.WIFI),
+            telemetry = DeviceTelemetry(batteryPercent = 90, isCharging = false, networkTransport = NetworkTransport.WIFI),
             hourOfDay = 19,
             pendingTaskCount = 0,
             activeReminderCount = 0,

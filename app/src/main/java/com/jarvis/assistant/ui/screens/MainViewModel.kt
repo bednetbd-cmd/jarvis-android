@@ -206,7 +206,7 @@ class MainViewModel(
         productivityCountsFlow
     ) { telemetry, counts ->
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        val unreadCount = runCatching { NotificationBufferStore.readRecent(4).size }.getOrDefault(0)
+        val unreadCount = runCatching { NotificationBufferStore.recent().take(4).size }.getOrDefault(0)
         ContextualSuggestionEngine.generate(
             telemetry = telemetry,
             hourOfDay = hour,

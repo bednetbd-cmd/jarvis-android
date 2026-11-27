@@ -254,7 +254,6 @@ private class FakeWebTelemetry(
 ) : SystemTelemetryPort {
     private val snapshot = DeviceTelemetry(
         batteryPercent = 85,
-        isOnline = isOnline,
         networkTransport = if (isOnline) NetworkTransport.WIFI else NetworkTransport.OFFLINE
     )
     override val telemetry: Flow<DeviceTelemetry> = MutableStateFlow(snapshot).asStateFlow()

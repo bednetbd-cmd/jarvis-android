@@ -30,6 +30,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
 import java.net.URI
 import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.util.Locale
 
 interface AiAssistantPort {
@@ -765,7 +766,7 @@ class OnDeviceJarvisAssistant(
     }
 
     private fun formatNumber(value: Double): String {
-        val formatter = DecimalFormat("#.######")
+        val formatter = DecimalFormat("#.######", DecimalFormatSymbols(Locale.US))
         return formatter.format(value)
     }
 

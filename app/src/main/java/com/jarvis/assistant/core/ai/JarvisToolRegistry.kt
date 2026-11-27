@@ -15,7 +15,6 @@ import com.jarvis.assistant.core.web.UnitConverter
 import com.jarvis.assistant.core.web.WebIntelligencePort
 import com.jarvis.assistant.data.local.TaskEntity
 import org.json.JSONObject
-import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
