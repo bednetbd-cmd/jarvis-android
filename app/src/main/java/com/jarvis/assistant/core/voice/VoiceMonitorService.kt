@@ -245,8 +245,15 @@ class VoiceMonitorService : Service() {
 
     private fun updateNotificationAndState() {
         val statusText = statusLabelFor(currentMode, awaitingFollowUpCommand)
-        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify(NOTIFICATION_ID, buildNotification(statusText))
+        val canNotify = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        if (canNotify) {
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.notify(NOTIFICATION_ID, buildNotification(statusText))
+        }
         container.voiceMonitor.updateStatus(
             isServiceRunning = true,
             mode = currentMode,

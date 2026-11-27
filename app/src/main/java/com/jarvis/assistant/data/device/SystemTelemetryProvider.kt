@@ -8,6 +8,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.BatteryManager
+import androidx.core.content.ContextCompat
 import com.jarvis.assistant.domain.model.DeviceTelemetry
 import com.jarvis.assistant.domain.model.NetworkTransport
 import kotlinx.coroutines.channels.awaitClose
@@ -51,7 +52,12 @@ class AndroidSystemTelemetryProvider(
             addAction(Intent.ACTION_POWER_CONNECTED)
             addAction(Intent.ACTION_POWER_DISCONNECTED)
         }
-        appContext.registerReceiver(batteryReceiver, batteryFilter)
+        ContextCompat.registerReceiver(
+            appContext,
+            batteryReceiver,
+            batteryFilter,
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
 
         val connectivityManager =
             appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager

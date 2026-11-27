@@ -13,6 +13,11 @@
 # Biometric & Security components
 -keep class androidx.biometric.** { *; }
 
+# Android services & WorkManager workers instantiated via reflection
+-keep class com.jarvis.assistant.core.productivity.ReminderWorker { *; }
+-keep class com.jarvis.assistant.core.voice.VoiceMonitorService { *; }
+-keep class com.jarvis.assistant.core.device.JarvisNotificationListenerService { *; }
+
 # Suppress harmless compile-time annotation warnings in third-party AARs
 -dontwarn javax.annotation.**
 -dontwarn org.checkerframework.**
